@@ -134,6 +134,7 @@ pytest==9.0.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-json-logger==4.1.0
+pywinpty==3.0.3
 PyYAML==6.0.3
 pyzmq==27.1.0
 qtconsole==5.7.2

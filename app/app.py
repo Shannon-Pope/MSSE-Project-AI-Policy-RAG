@@ -1,14 +1,56 @@
-from flask import Flask, jsonify
+import os
+
+import requests
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException
+
+from app.rag_pipeline import answer_question
 
 app = Flask(__name__)
+
+
+@app.errorhandler(404)
+def not_found(e: HTTPException):
+    return jsonify({"error": "Not found."}), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(e: HTTPException):
+    return jsonify({"error": "Method not allowed."}), 405
+
 
 @app.route("/")
 def home():
     return "AI Policy RAG App Running"
 
+
 @app.route("/health")
 def health():
     return jsonify({"status": "healthy"})
 
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be JSON."}), 400
+
+    question = data.get("question", "")
+
+    try:
+        result = answer_question(question)
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
+    except requests.Timeout:
+        return jsonify({"error": "LLM request timed out."}), 504
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response is not None else "unknown"
+        detail = e.response.text if e.response is not None else ""
+        return jsonify({"error": f"LLM API error: {status}", "detail": detail}), 502
+    except Exception as e:
+        return jsonify({"error": "Unexpected error.", "detail": str(e)}), 500
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")

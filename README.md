@@ -45,7 +45,7 @@ Create `.env` from `.env.example`
 ### Run Application
 
 ```bash
-python app/app.py
+python -m app.app
 ```
 
 ## Health Check
