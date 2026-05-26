@@ -53,3 +53,28 @@ python app/app.py
 ```text
 http://127.0.0.1:5000/health
 ```
+## Document Ingestion
+
+Place policy documents in:
+
+```text
+data/policies/
+
+Supported formats:
+* .md
+* .txt
+* .html
+* .pdf
+```
+
+## Run Ingestion
+
+```bash
+python scripts/ingest.py
+```
+
+## Test Retrieval
+
+```bash
+python scripts/test_retrieval.py
+```
