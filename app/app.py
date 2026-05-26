@@ -1,7 +1,8 @@
 import os
+from typing import Any
 
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from werkzeug.exceptions import HTTPException
 
 from app.rag_pipeline import answer_question
@@ -21,7 +22,7 @@ def method_not_allowed(e: HTTPException):
 
 @app.route("/")
 def home():
-    return "AI Policy RAG App Running"
+    return render_template("index.html")
 
 
 @app.route("/health")
@@ -31,11 +32,15 @@ def health():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "Request body must be JSON."}), 400
+    data: dict[str, Any] = request.get_json(silent=True) or {}
+    question: str = str(data.get("question", "")).strip()
 
-    question = data.get("question", "")
+    if not question:
+        return jsonify({
+            "answer": "Please enter a question.",
+            "citations": [],
+            "snippets": []
+        }), 400
 
     try:
         result = answer_question(question)
@@ -49,7 +54,12 @@ def chat():
         detail = e.response.text if e.response is not None else ""
         return jsonify({"error": f"LLM API error: {status}", "detail": detail}), 502
     except Exception as e:
-        return jsonify({"error": "Unexpected error.", "detail": str(e)}), 500
+        return jsonify({
+            "answer": "Sorry, something went wrong while generating the answer.",
+            "error": str(e),
+            "citations": [],
+            "snippets": []
+        }), 500
 
 
 if __name__ == "__main__":
