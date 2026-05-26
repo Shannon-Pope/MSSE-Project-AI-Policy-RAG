@@ -30,4 +30,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -q
+          PYTHONPATH="${PYTHONPATH}:$(pwd)" pytest -q
