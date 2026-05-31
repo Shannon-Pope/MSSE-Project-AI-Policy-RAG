@@ -1,0 +1,19 @@
+id,question,gold_answer,expected_source
+1,What is the daily meal allowance?,Employees may be reimbursed up to $125 per person per day for meals.,travel_policy
+2,What is the maximum hotel rate?,Hotel reimbursement is limited to $200 per night before taxes and fees. Exceptions require prior approval.,travel_policy
+3,Can employees work remotely?,Employees may request flexible remote work arrangements with management approval.,remote_work_policy
+4,How do employees request time off?,Employees should submit PTO requests through the HR system and receive manager approval.,pto_policy
+5,Do full-time and part-time employees accrue PTO at the same rate?,No. Full-time employees accrue PTO at a higher rate than part-time employees.,pto_policy
+6,What should employees do before booking business travel?,Employees should submit a travel request and receive approval before booking.,travel_policy
+7,How should employees submit expenses?,Employees should create and submit an expense report with required receipts and business justification.,expense_policy
+8,Are receipts required for reimbursement?,Yes. Employees should include receipts when submitting expense reports.,expense_policy
+9,Who approves flexible remote work?,Flexible remote work requires management approval.,remote_work_policy
+10,What are employees expected to do with company equipment?,Employees should protect company equipment and follow security procedures.,security_policy
+11,Can employees share passwords?,No. Employees should not share passwords or credentials.,security_policy
+12,What should employees do if they suspect a security incident?,Employees must immediately report the incident to the IT or Security team.,security_policy
+13,What is the policy for personal expenses?,Personal expenses are generally not reimbursable unless specifically approved.,expense_policy
+14,Are employees automatically approved for hybrid work?,No. Hybrid schedules require approval from managers.,remote_work_policy
+15,Who is eligible for PTO?,All California employees are eligible for PTO. Full-time and part-time employees both accrue PTO but at different rates.,pto_policy
+16,What documents support a travel reimbursement?,Itemized receipts, business justification, travel dates, and attendee names (if applicable) are required.,travel_policy
+17,Can I ask this assistant who won the Super Bowl?,The assistant should refuse because the question is outside the policy corpus.,out_of_scope
+18,What is the capital of France?,The assistant should refuse because the question is outside the policy corpus.,out_of_scope
