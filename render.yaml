@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ai-policy-rag
+    env: python
+    buildCommand: pip install -r requirements.txt && python scripts/ingest.py
+    startCommand: gunicorn app.app:app --workers 2 --timeout 120
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: owl-alpha
+      - key: PYTHON_VERSION
+        value: "3.11.0"
