@@ -1,7 +1,7 @@
 import os
 from typing import Any
 
-import requests
+import httpx
 from flask import Flask, jsonify, request, render_template
 from werkzeug.exceptions import HTTPException
 
@@ -47,11 +47,11 @@ def chat():
         return jsonify(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 500
-    except requests.Timeout:
+    except httpx.TimeoutException:
         return jsonify({"error": "LLM request timed out."}), 504
-    except requests.HTTPError as e:
-        status = e.response.status_code if e.response is not None else "unknown"
-        detail = e.response.text if e.response is not None else ""
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        detail = e.response.text
         return jsonify({"error": f"LLM API error: {status}", "detail": detail}), 502
     except Exception as e:
         return jsonify({

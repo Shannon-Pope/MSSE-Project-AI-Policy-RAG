@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import TypedDict
 
-import requests
+import httpx
 import chromadb
 from dotenv import load_dotenv
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
@@ -103,45 +103,31 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
 
 def call_openrouter(question: str, context: str) -> str:
     import time as _t
-    import signal as _sig
     if not OPENROUTER_API_KEY:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
     prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context)
 
-    def _alarm(signum, frame):
-        raise requests.Timeout("OpenRouter hard timeout (60s)")
-
     print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
     _t1 = _t.time()
 
-    # SIGALRM gives a hard wall-clock deadline that interrupts blocking socket
-    # reads at the OS level — unlike requests timeout= (per-chunk) or threads
-    # (shutdown blocks). Safe in a gunicorn sync worker; gunicorn doesn't use SIGALRM.
-    _old = _sig.signal(_sig.SIGALRM, _alarm)
-    _sig.alarm(60)
-    try:
-        response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": OPENROUTER_MODEL,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": 0.2,
-                "max_tokens": 600,
-                "stream": False,
-            },
-            timeout=30,
-        )
-    finally:
-        _sig.alarm(0)
-        _sig.signal(_sig.SIGALRM, _old)
+    response = httpx.post(
+        url="https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": OPENROUTER_MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+            "max_tokens": 600,
+        },
+        timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
+    )
 
     print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
