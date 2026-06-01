@@ -64,6 +64,7 @@ def get_collection() -> chromadb.Collection:
 
 
 def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
+    import time as _t
     collection = get_collection()
 
     n_results = min(top_k, collection.count())
@@ -73,12 +74,16 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
     # Pass pre-computed embeddings directly to bypass chromadb's internal embedding
     # path, which skips DefaultEmbeddingFunction and uses a stored config_ef that
     # creates a new ONNXMiniLM_L6_V2() instance per call.
+    _t1 = _t.time()
     query_embedding = _onnx_ef([question])
+    print(f"[rag] embed: {_t.time()-_t1:.2f}s", flush=True)
 
+    _t2 = _t.time()
     results = collection.query(
         query_embeddings=query_embedding,
         n_results=n_results
     )
+    print(f"[rag] chromadb query: {_t.time()-_t2:.2f}s", flush=True)
 
     documents = (results["documents"] or [[]])[0]
     metadatas = (results["metadatas"] or [[]])[0]
@@ -97,11 +102,14 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
 
 
 def call_openrouter(question: str, context: str) -> str:
+    import time as _t
     if not OPENROUTER_API_KEY:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
     prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context)
 
+    print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
+    _t1 = _t.time()
     response = requests.post(
         url="https://openrouter.ai/api/v1/chat/completions",
         headers={
@@ -116,9 +124,11 @@ def call_openrouter(question: str, context: str) -> str:
             ],
             "temperature": 0.2,
             "max_tokens": 600,
+            "stream": False,
         },
         timeout=30,
     )
+    print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
