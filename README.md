@@ -36,11 +36,11 @@ Copy `.env.example` to `.env` and fill in:
 
 ```
 OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=meta-llama/llama-3.2-3b-instruct:free
+OPENROUTER_MODEL=liquid/lfm-2.5-1.2b-thinking:free
 ```
 
 `OPENROUTER_API_KEY` is required. Get one at [openrouter.ai](https://openrouter.ai).  
-`OPENROUTER_MODEL` defaults to `meta-llama/llama-3.1-8b-instruct:free` if not set.
+
 
 ### Ingest policy documents
 
@@ -76,7 +76,7 @@ Tests cover the retrieval pipeline (`tests/test_retrieval.py`) and Flask endpoin
 
 ## Deployment
 
-The app deploys to [Render](https://render.com) via `render.yaml`. The build step runs `scripts/ingest.py` to populate the vector store; the start command launches gunicorn.
+The app deploys to [Render](https://render.com) via `render.yaml`. The build step runs `scripts/download_onnx.py` (pre-downloads the ONNX embedding model) then `scripts/ingest.py` (populates the vector store); the start command launches gunicorn.
 
 Set `OPENROUTER_API_KEY` as a secret in the Render dashboard (Environment tab). `OPENROUTER_MODEL` is set in `render.yaml`.
 

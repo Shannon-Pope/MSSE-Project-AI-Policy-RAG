@@ -23,7 +23,7 @@ from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
 load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "liquid/lfm-2.5-1.2b-thinking:free")
 
 _collection: chromadb.Collection | None = None
 
