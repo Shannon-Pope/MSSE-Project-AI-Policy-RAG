@@ -13,11 +13,9 @@ from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_
 _ONNX_CACHE = Path(__file__).resolve().parent.parent / "vectorstore" / "onnx_cache"
 ONNXMiniLM_L6_V2.DOWNLOAD_PATH = _ONNX_CACHE / ONNXMiniLM_L6_V2.MODEL_NAME
 
-# DefaultEmbeddingFunction.__call__ creates a new ONNXMiniLM_L6_V2() instance on every
-# invocation, which re-loads the ONNX model from disk on every request (>120 s on 0.5 CPU).
-# Override __call__ to use a single cached instance instead.
+# Singleton: keep one loaded instance so the ONNX session (tokenizer + model) is
+# created once at startup rather than per request.
 _onnx_ef = ONNXMiniLM_L6_V2()
-DefaultEmbeddingFunction.__call__ = lambda self, inp: _onnx_ef(inp)  # type: ignore[method-assign]
 
 from app.config import CHROMA_DIR, COLLECTION_NAME
 from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
@@ -72,8 +70,13 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
     if n_results == 0:
         return []
 
+    # Pass pre-computed embeddings directly to bypass chromadb's internal embedding
+    # path, which skips DefaultEmbeddingFunction and uses a stored config_ef that
+    # creates a new ONNXMiniLM_L6_V2() instance per call.
+    query_embedding = _onnx_ef([question])
+
     results = collection.query(
-        query_texts=[question],
+        query_embeddings=query_embedding,
         n_results=n_results
     )
 
@@ -136,12 +139,16 @@ def format_snippets(chunks: list[Chunk]) -> list[Snippet]:
 
 
 try:
+    print("[rag_pipeline] Loading ChromaDB collection...")
     get_collection()
-    # Force the ONNX model to load (ort.InferenceSession + tokenizer) before the first
-    # request arrives. Happens at import time so the gunicorn request timeout doesn't apply.
+    print("[rag_pipeline] Collection loaded. Warming up ONNX model...")
+    # Force ort.InferenceSession + tokenizer to load before the first request.
+    # Happens at import time so the gunicorn request timeout doesn't apply.
     _onnx_ef(["warmup"])
+    print("[rag_pipeline] ONNX model ready.")
 except Exception as _startup_err:
     import warnings
+    print(f"[rag_pipeline] Startup warmup failed: {_startup_err}")
     warnings.warn(f"Startup warmup failed: {_startup_err}")
 
 
