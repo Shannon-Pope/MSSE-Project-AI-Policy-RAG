@@ -103,14 +103,25 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
 
 def call_openrouter(question: str, context: str) -> str:
     import time as _t
-    import concurrent.futures as _cf
+    import signal as _sig
     if not OPENROUTER_API_KEY:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
     prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context)
 
-    def _post() -> requests.Response:
-        return requests.post(
+    def _alarm(signum, frame):
+        raise requests.Timeout("OpenRouter hard timeout (60s)")
+
+    print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
+    _t1 = _t.time()
+
+    # SIGALRM gives a hard wall-clock deadline that interrupts blocking socket
+    # reads at the OS level — unlike requests timeout= (per-chunk) or threads
+    # (shutdown blocks). Safe in a gunicorn sync worker; gunicorn doesn't use SIGALRM.
+    _old = _sig.signal(_sig.SIGALRM, _alarm)
+    _sig.alarm(60)
+    try:
+        response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -128,23 +139,9 @@ def call_openrouter(question: str, context: str) -> str:
             },
             timeout=30,
         )
-
-    print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
-    _t1 = _t.time()
-
-    # Run the HTTP call in a thread so future.result(timeout=60) acts as a hard
-    # total-wall-clock cap regardless of whether the server streams keepalive data.
-    # Do NOT use the context manager — it calls shutdown(wait=True) on exit and
-    # would block here for the full request duration even after TimeoutError.
-    _pool = _cf.ThreadPoolExecutor(max_workers=1)
-    _future = _pool.submit(_post)
-    try:
-        response = _future.result(timeout=60)
-    except _cf.TimeoutError:
-        _pool.shutdown(wait=False)
-        print(f"[rag] OpenRouter hard timeout after 60s", flush=True)
-        raise requests.Timeout("OpenRouter total timeout exceeded 60s")
-    _pool.shutdown(wait=False)
+    finally:
+        _sig.alarm(0)
+        _sig.signal(_sig.SIGALRM, _old)
 
     print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
