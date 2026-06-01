@@ -134,13 +134,17 @@ def call_openrouter(question: str, context: str) -> str:
 
     # Run the HTTP call in a thread so future.result(timeout=60) acts as a hard
     # total-wall-clock cap regardless of whether the server streams keepalive data.
-    with _cf.ThreadPoolExecutor(max_workers=1) as _pool:
-        _future = _pool.submit(_post)
-        try:
-            response = _future.result(timeout=60)
-        except _cf.TimeoutError:
-            print(f"[rag] OpenRouter hard timeout after 60s", flush=True)
-            raise requests.Timeout("OpenRouter total timeout exceeded 60s")
+    # Do NOT use the context manager — it calls shutdown(wait=True) on exit and
+    # would block here for the full request duration even after TimeoutError.
+    _pool = _cf.ThreadPoolExecutor(max_workers=1)
+    _future = _pool.submit(_post)
+    try:
+        response = _future.result(timeout=60)
+    except _cf.TimeoutError:
+        _pool.shutdown(wait=False)
+        print(f"[rag] OpenRouter hard timeout after 60s", flush=True)
+        raise requests.Timeout("OpenRouter total timeout exceeded 60s")
+    _pool.shutdown(wait=False)
 
     print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
