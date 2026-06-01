@@ -1,10 +1,17 @@
 import os
+from pathlib import Path
 from typing import TypedDict
 
 import requests
 import chromadb
 from dotenv import load_dotenv
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_V2
+
+# Redirect the ONNX model cache into the project directory so it survives Render's
+# build snapshot. The default Path.home()/.cache/chroma/... is outside the snapshot.
+_ONNX_CACHE = Path(__file__).resolve().parent.parent / "vectorstore" / "onnx_cache"
+ONNXMiniLM_L6_V2.DOWNLOAD_PATH = _ONNX_CACHE / ONNXMiniLM_L6_V2.MODEL_NAME
 
 from app.config import CHROMA_DIR, COLLECTION_NAME
 from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context

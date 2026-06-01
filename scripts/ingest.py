@@ -6,6 +6,10 @@ from typing import TypedDict
 import chromadb
 from chromadb.api.types import Metadata
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_V2
+
+_ONNX_CACHE = Path(__file__).resolve().parent.parent / "vectorstore" / "onnx_cache"
+ONNXMiniLM_L6_V2.DOWNLOAD_PATH = _ONNX_CACHE / ONNXMiniLM_L6_V2.MODEL_NAME
 from pypdf import PdfReader
 from bs4 import BeautifulSoup
 

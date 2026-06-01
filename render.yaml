@@ -2,11 +2,9 @@ services:
   - type: web
     name: ai-policy-rag
     env: python
-    buildCommand: "export HOME=/opt/render/project/src && pip install -r requirements-prod.txt && python scripts/ingest.py"
+    buildCommand: pip install -r requirements-prod.txt && python scripts/ingest.py
     startCommand: gunicorn app.app:app --workers 1 --timeout 120
     envVars:
-      - key: HOME
-        value: /opt/render/project/src
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL

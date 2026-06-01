@@ -5,3 +5,4 @@ __pycache__/
 .vectorstore/
 .DS_Store
 .cache/
+vectorstore/onnx_cache/
