@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .vectorstore/
 .DS_Store
+.cache/
