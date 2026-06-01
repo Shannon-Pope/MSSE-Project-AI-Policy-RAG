@@ -5,7 +5,7 @@ from typing import TypedDict
 
 import chromadb
 from chromadb.api.types import Metadata
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from pypdf import PdfReader
 from bs4 import BeautifulSoup
 
@@ -18,7 +18,6 @@ class DocumentPart(TypedDict):
 POLICY_DIR = Path("data/policies")
 CHROMA_DIR = "vectorstore/chroma"
 COLLECTION_NAME = "company_policies"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 BATCH_SIZE = 200
 
 
@@ -100,15 +99,11 @@ def main():
     if not POLICY_DIR.exists():
         raise FileNotFoundError(f"Policy directory not found: {POLICY_DIR}")
 
-    embedding_function = SentenceTransformerEmbeddingFunction(
-        model_name=EMBEDDING_MODEL
-    )
-
     client = chromadb.PersistentClient(path=CHROMA_DIR)
 
     collection = client.get_or_create_collection(
         name=COLLECTION_NAME,
-        embedding_function=embedding_function
+        embedding_function=DefaultEmbeddingFunction(),  # type: ignore[arg-type]
     )
 
     documents: list[str] = []

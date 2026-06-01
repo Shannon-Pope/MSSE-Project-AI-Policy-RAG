@@ -4,9 +4,9 @@ from typing import TypedDict
 import requests
 import chromadb
 from dotenv import load_dotenv
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
-from app.config import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL
+from app.config import CHROMA_DIR, COLLECTION_NAME
 from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
 
 load_dotenv()
@@ -44,13 +44,10 @@ class RAGResult(TypedDict):
 def get_collection() -> chromadb.Collection:
     global _collection
     if _collection is None:
-        embedding_function = SentenceTransformerEmbeddingFunction(
-            model_name=EMBEDDING_MODEL
-        )
         client = chromadb.PersistentClient(path=CHROMA_DIR)
         _collection = client.get_collection(
             name=COLLECTION_NAME,
-            embedding_function=embedding_function,  # type: ignore[arg-type]
+            embedding_function=DefaultEmbeddingFunction(),  # type: ignore[arg-type]
         )
     return _collection
 
@@ -123,6 +120,13 @@ def format_snippets(chunks: list[Chunk]) -> list[Snippet]:
         {"document_title": c["document_title"], "snippet": c["text"][:500]}
         for c in chunks
     ]
+
+
+try:
+    get_collection()
+except Exception as _startup_err:
+    import warnings
+    warnings.warn(f"ChromaDB collection not available at startup: {_startup_err}")
 
 
 def answer_question(question: str, top_k: int = 4) -> RAGResult:

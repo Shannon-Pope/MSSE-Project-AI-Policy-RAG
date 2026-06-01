@@ -35,7 +35,12 @@ form.addEventListener("submit", async (event) => {
             body: JSON.stringify({ question })
         });
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error(`Server error (${response.status}). Please try again.`);
+        }
 
         if (!response.ok) {
             throw new Error(data.error || "Request failed.");

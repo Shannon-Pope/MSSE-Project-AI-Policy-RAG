@@ -1,22 +1,17 @@
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 
 CHROMA_DIR = "vectorstore/chroma"
 COLLECTION_NAME = "company_policies"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 def main():
-    embedding_function = SentenceTransformerEmbeddingFunction(
-        model_name=EMBEDDING_MODEL
-    )
-
     client = chromadb.PersistentClient(path=CHROMA_DIR)
 
     collection = client.get_collection(
         name=COLLECTION_NAME,
-        embedding_function=embedding_function  # type: ignore[arg-type]
+        embedding_function=DefaultEmbeddingFunction(),  # type: ignore[arg-type]
     )
 
     query = input("Enter a policy question: ")
