@@ -13,6 +13,12 @@ from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_
 _ONNX_CACHE = Path(__file__).resolve().parent.parent / "vectorstore" / "onnx_cache"
 ONNXMiniLM_L6_V2.DOWNLOAD_PATH = _ONNX_CACHE / ONNXMiniLM_L6_V2.MODEL_NAME
 
+# DefaultEmbeddingFunction.__call__ creates a new ONNXMiniLM_L6_V2() instance on every
+# invocation, which re-loads the ONNX model from disk on every request (>120 s on 0.5 CPU).
+# Override __call__ to use a single cached instance instead.
+_onnx_ef = ONNXMiniLM_L6_V2()
+DefaultEmbeddingFunction.__call__ = lambda self, inp: _onnx_ef(inp)  # type: ignore[method-assign]
+
 from app.config import CHROMA_DIR, COLLECTION_NAME
 from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
 
@@ -131,9 +137,12 @@ def format_snippets(chunks: list[Chunk]) -> list[Snippet]:
 
 try:
     get_collection()
+    # Force the ONNX model to load (ort.InferenceSession + tokenizer) before the first
+    # request arrives. Happens at import time so the gunicorn request timeout doesn't apply.
+    _onnx_ef(["warmup"])
 except Exception as _startup_err:
     import warnings
-    warnings.warn(f"ChromaDB collection not available at startup: {_startup_err}")
+    warnings.warn(f"Startup warmup failed: {_startup_err}")
 
 
 def answer_question(question: str, top_k: int = 4) -> RAGResult:
