@@ -103,31 +103,45 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
 
 def call_openrouter(question: str, context: str) -> str:
     import time as _t
+    import concurrent.futures as _cf
     if not OPENROUTER_API_KEY:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
     prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context)
 
+    def _post() -> requests.Response:
+        return requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": OPENROUTER_MODEL,
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.2,
+                "max_tokens": 600,
+                "stream": False,
+            },
+            timeout=30,
+        )
+
     print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
     _t1 = _t.time()
-    response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": OPENROUTER_MODEL,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 600,
-            "stream": False,
-        },
-        timeout=30,
-    )
+
+    # Run the HTTP call in a thread so future.result(timeout=60) acts as a hard
+    # total-wall-clock cap regardless of whether the server streams keepalive data.
+    with _cf.ThreadPoolExecutor(max_workers=1) as _pool:
+        _future = _pool.submit(_post)
+        try:
+            response = _future.result(timeout=60)
+        except _cf.TimeoutError:
+            print(f"[rag] OpenRouter hard timeout after 60s", flush=True)
+            raise requests.Timeout("OpenRouter total timeout exceeded 60s")
+
     print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
     response.raise_for_status()
