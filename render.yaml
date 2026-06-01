@@ -3,7 +3,7 @@ services:
     name: ai-policy-rag
     env: python
     buildCommand: pip install -r requirements-prod.txt && python scripts/download_onnx.py && python scripts/ingest.py
-    startCommand: gunicorn app.app:app --workers 1 --timeout 300 --preload -c gunicorn_config.py
+    startCommand: gunicorn app.app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 300
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false

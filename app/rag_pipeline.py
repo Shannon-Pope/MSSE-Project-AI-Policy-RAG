@@ -149,22 +149,6 @@ def format_snippets(chunks: list[Chunk]) -> list[Snippet]:
     ]
 
 
-try:
-    print("[rag_pipeline] Loading ChromaDB collection...", flush=True)
-    get_collection()
-    import time as _time
-    print("[rag_pipeline] Collection loaded. Warming up ONNX model...", flush=True)
-    _t0 = _time.time()
-    # Force ort.InferenceSession + tokenizer to load before the first request.
-    # Happens at import time so the gunicorn request timeout doesn't apply.
-    _onnx_ef(["warmup"])
-    print(f"[rag_pipeline] ONNX model ready in {_time.time()-_t0:.1f}s", flush=True)
-except Exception as _startup_err:
-    import warnings
-    print(f"[rag_pipeline] Startup warmup failed: {_startup_err}", flush=True)
-    warnings.warn(f"Startup warmup failed: {_startup_err}")
-
-
 def answer_question(question: str, top_k: int = 4) -> RAGResult:
     if not question or not question.strip():
         return {"answer": "Please enter a question.", "citations": [], "snippets": []}
