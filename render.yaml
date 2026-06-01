@@ -2,7 +2,7 @@ services:
   - type: web
     name: ai-policy-rag
     env: python
-    buildCommand: pip install -r requirements.txt && python scripts/ingest.py
+    buildCommand: pip install -r requirements-prod.txt && python scripts/ingest.py
     startCommand: gunicorn app.app:app --workers 1 --timeout 120
     envVars:
       - key: OPENROUTER_API_KEY
