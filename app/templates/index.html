@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AI Policy Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <main class="container">
         <section class="hero">
+            <div class="hero-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
             <h1>AI Policy Assistant</h1>
             <p>Ask questions about company policies and procedures.</p>
         </section>
@@ -17,24 +25,28 @@
             <form id="chat-form">
                 <label for="question">Your question</label>
                 <textarea id="question" rows="4" placeholder="Example: What is the daily meal allowance?" required></textarea>
-                <button type="submit">Ask</button>
+                <button type="submit">Ask &#x2192;</button>
             </form>
 
-            <div id="loading" class="hidden">Thinking...</div>
+            <div id="loading" class="hidden">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
             <div id="error" class="error hidden"></div>
 
-            <section id="answer-section" class="hidden">
-                <h2>Answer</h2>
-                <p id="answer"></p>
-            </section>
-
-            <section id="citations-section" class="hidden">
-                <h2>Citations</h2>
-                <ul id="citations"></ul>
-            </section>
+            <div id="chat-response" class="hidden">
+                <div class="chat-message">
+                    <div class="chat-avatar">AI</div>
+                    <div class="chat-bubble">
+                        <p id="answer"></p>
+                        <div id="citations" class="citation-badges"></div>
+                    </div>
+                </div>
+            </div>
 
             <section id="snippets-section" class="hidden">
-                <h2>Source Snippets</h2>
+                <div class="snippets-label">Source Snippets</div>
                 <div id="snippets"></div>
             </section>
         </section>

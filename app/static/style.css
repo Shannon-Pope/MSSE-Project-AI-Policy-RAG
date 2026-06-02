@@ -1,105 +1,271 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f5f7fb;
+    font-family: 'Inter', system-ui, Arial, sans-serif;
+    background: linear-gradient(150deg, #eef2ff 0%, #f5f7fb 60%);
     color: #1f2937;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
 }
 
+/* Hero */
 .hero {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
+}
+
+.hero-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 18px;
+    color: white;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 28px rgba(99, 102, 241, 0.35);
 }
 
 .hero h1 {
-    margin-bottom: 8px;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: #111827;
+    letter-spacing: -0.02em;
 }
 
+.hero p {
+    font-size: 15px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Card */
 .chat-card {
     background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.09);
+    overflow: hidden;
+}
+
+/* Form */
+form {
     padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid #f1f5f9;
 }
 
 label {
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 textarea {
     width: 100%;
     min-height: 100px;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    box-sizing: border-box;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    resize: vertical;
+    color: #1f2937;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+textarea::placeholder {
+    color: #9ca3af;
 }
 
 textarea:focus {
     outline: none;
-    border-color: #111827;
-    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
-button {
+button[type="submit"] {
     margin-top: 12px;
-    padding: 10px 18px;
-    font-size: 16px;
+    padding: 11px 22px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
     border: none;
     border-radius: 10px;
-    background: #111827;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
     cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
 }
 
-button:hover:not(:disabled) {
-    background: #374151;
+button[type="submit"]:hover:not(:disabled) {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.38);
 }
 
-button:disabled {
-    background: #9ca3af;
+button[type="submit"]:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
-section {
-    margin-top: 24px;
-}
-
-.hidden {
-    display: none;
-}
-
-.error {
-    margin-top: 16px;
-    color: #b91c1c;
-    background: #fee2e2;
-    padding: 12px;
-    border-radius: 10px;
-}
-
+/* Loading dots */
 #loading {
-    margin-top: 16px;
-    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 22px 24px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #6366f1;
+    border-radius: 50%;
+    animation: pulse 1.3s ease-in-out infinite;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-7px); opacity: 1; }
+}
+
+/* Error */
+.error {
+    margin: 0;
+    padding: 14px 24px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border-top: 1px solid #fecaca;
+    font-size: 14px;
+}
+
+/* Chat response */
+#chat-response {
+    padding: 24px;
+}
+
+.chat-message {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.chat-avatar {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.chat-bubble {
+    flex: 1;
+    background: #f5f3ff;
+    border: 1.5px solid #ede9fe;
+    border-radius: 0 16px 16px 16px;
+    padding: 16px 18px;
+    line-height: 1.75;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.chat-bubble p {
+    margin: 0;
+}
+
+/* Citation badges */
+.citation-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.citation-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #ede9fe;
+    color: #5b21b6;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Snippets */
+#snippets-section {
+    border-top: 1px solid #f1f5f9;
+    padding: 20px 24px;
+}
+
+.snippets-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
 }
 
 .snippet-card {
-    background: #f8fafc;
-    border-left: 4px solid #111827;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    background: #fafafa;
+    border: 1px solid #f1f5f9;
+    border-left: 3px solid #6366f1;
+    padding: 14px 16px;
+    border-radius: 0 10px 10px 0;
+    margin-bottom: 10px;
+}
+
+.snippet-card:last-child {
+    margin-bottom: 0;
 }
 
 .snippet-meta {
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6366f1;
     margin-bottom: 6px;
+}
+
+.snippet-card p {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.hidden {
+    display: none !important;
 }

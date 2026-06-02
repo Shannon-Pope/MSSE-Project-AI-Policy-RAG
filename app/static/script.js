@@ -3,11 +3,9 @@ const questionInput = document.getElementById("question");
 const loading = document.getElementById("loading");
 const errorBox = document.getElementById("error");
 
-const answerSection = document.getElementById("answer-section");
+const chatResponse = document.getElementById("chat-response");
 const answerText = document.getElementById("answer");
-
-const citationsSection = document.getElementById("citations-section");
-const citationsList = document.getElementById("citations");
+const citationsBadges = document.getElementById("citations");
 
 const snippetsSection = document.getElementById("snippets-section");
 const snippetsDiv = document.getElementById("snippets");
@@ -29,9 +27,7 @@ form.addEventListener("submit", async (event) => {
     try {
         const response = await fetch("/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question })
         });
 
@@ -60,12 +56,11 @@ function resetUI() {
     errorBox.classList.add("hidden");
     errorBox.textContent = "";
 
-    answerSection.classList.add("hidden");
-    citationsSection.classList.add("hidden");
+    chatResponse.classList.add("hidden");
     snippetsSection.classList.add("hidden");
 
     answerText.textContent = "";
-    citationsList.innerHTML = "";
+    citationsBadges.innerHTML = "";
     snippetsDiv.innerHTML = "";
 }
 
@@ -81,22 +76,21 @@ function showError(message) {
 
 function displayAnswer(answer) {
     answerText.textContent = answer;
-    answerSection.classList.remove("hidden");
+    chatResponse.classList.remove("hidden");
 }
 
 function displayCitations(citations) {
     if (citations.length === 0) return;
 
-    citationsList.innerHTML = "";
+    citationsBadges.innerHTML = "";
 
     citations.forEach((citation) => {
-        const li = document.createElement("li");
-        li.textContent = citation.document_title;
-        if (citation.page) li.textContent += ` — page ${citation.page}`;
-        citationsList.appendChild(li);
+        const badge = document.createElement("span");
+        badge.className = "citation-badge";
+        badge.textContent = citation.document_title;
+        if (citation.page) badge.textContent += ` p.${citation.page}`;
+        citationsBadges.appendChild(badge);
     });
-
-    citationsSection.classList.remove("hidden");
 }
 
 function displaySnippets(snippets) {

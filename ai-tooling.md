@@ -17,7 +17,7 @@ Primary uses included:
 * Explaining RAG architecture concepts
 * Providing guidance on Flask application structure
 * Assisting with evaluation methodology and metrics
-* Helping create project documentation
+* Helping create project documentation, including the policies
 
 #### What Worked Well
 
