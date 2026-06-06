@@ -2,47 +2,86 @@
 
 ## Architecture Overview
 
-The application is a standard RAG pipeline: documents are chunked and embedded into a local vector store at ingest time; at query time the user's question is embedded, the top-k most similar chunks are retrieved, and those chunks are injected into an LLM prompt that generates a cited answer. A Flask web server exposes the UI and API.
+For this project, I implemented a Retrieval-Augmented Generation (RAG) application using a straightforward architecture. Policy documents are ingested, split into chunks, and stored in a vector database. When a user submits a question, the application retrieves the most relevant document chunks and provides them to the language model as context for generating an answer.
+
+The application is built with Flask and exposes both a web interface and API endpoints. My goal was to create a solution that was simple, cost-effective, and easy to understand while still demonstrating the core principles of a modern RAG system.
 
 ## Design Decisions
 
 ### Embedding Model — `all-MiniLM-L6-v2` (ONNX)
 
-ChromaDB's built-in `ONNXMiniLM_L6_V2` was chosen as the embedding model. It runs the `all-MiniLM-L6-v2` sentence transformer locally via ONNX Runtime with no external API calls or cost. The model is well-established for semantic similarity tasks and produces 384-dimensional embeddings that are compact enough for a small corpus. Running the model locally via ONNX also eliminates network latency and API rate limits at query time, and allows the same model to be used consistently at both ingest and retrieval time without configuration drift.
+I selected ChromaDB's built-in `ONNXMiniLM_L6_V2` embedding model because it runs locally, requires no external API calls, and has no usage costs. The model is widely used for semantic similarity tasks and produces compact embeddings that work well for a relatively small document corpus.
+
+Running embeddings locally also eliminated concerns about API quotas, network latency, and ongoing operating costs. Since the same model is used for both indexing and retrieval, consistency across the pipeline is maintained.
 
 ### Chunking Strategy — 900 characters, 150-character overlap
 
-Documents are split into chunks of approximately 900 characters with a 150-character overlap. This size was chosen to fit meaningfully within `all-MiniLM-L6-v2`'s 256-token input window while keeping each chunk focused enough to embed a single policy concept. A larger chunk risks diluting the embedding signal across unrelated content; a smaller chunk risks splitting a single policy rule across two chunks and losing context. The 150-character overlap prevents a relevant sentence being cut at a boundary and missed by retrieval.
+Documents are divided into chunks of approximately 900 characters with a 150-character overlap between chunks.
 
-### Top-k Retrieval — k = 4
+I chose this approach to balance context preservation with retrieval accuracy. Larger chunks can contain multiple unrelated concepts, which can weaken embedding quality. Smaller chunks can break policy statements apart and make it harder to retrieve complete answers. The overlap helps ensure important information is not lost at chunk boundaries.
 
-Four chunks are retrieved per query. This provides enough context to cover multi-step policy questions (e.g. a procedure with several steps across different paragraphs) without exceeding the LLM's useful context window or inflating prompt size unnecessarily. With a small corpus of 9 documents, k=4 retrieves from multiple source documents when relevant, supporting cross-policy answers.
+### Retrieval Strategy — Top-k = 4
 
-### Vector Store — ChromaDB (local persistent)
+The application retrieves the four most relevant chunks for each query.
 
-ChromaDB was selected as the vector store because it is free, requires no external service, and persists the index to disk so it survives server restarts and Render deployments. It integrates directly with the ONNX embedding function used at ingest, making the retrieval path consistent. For a corpus of this size (9 documents, hundreds of chunks) a local store is sufficient; a hosted store like Pinecone would add cost and a network dependency without meaningful benefit.
+In testing, four chunks provided enough context to answer most policy-related questions without unnecessarily increasing prompt size. Since the document collection is relatively small, retrieving four chunks also increases the likelihood of capturing supporting information from multiple policies when needed.
 
-### LLM and API — OpenRouter (free tier)
+### Vector Store — ChromaDB
 
-The LLM is accessed via OpenRouter's free tier API using the `liquid/lfm-2.5-1.2b-thinking:free` model. OpenRouter was chosen because it provides access to capable LLMs at zero cost, which satisfies the project requirement to use free-tier options. The API is called directly over HTTP using `httpx` rather than through a framework, keeping the dependency surface small. The trade-off of the free tier is high latency (p50 ≈ 26s), which is a consequence of shared free-tier infrastructure rather than application design.
+I selected ChromaDB because it is free, lightweight, and easy to integrate into a Python application. It also persists data locally, allowing the vector index to survive application restarts and deployments.
+
+For a project of this size, ChromaDB provides all the functionality needed without introducing the complexity or cost of a managed vector database service.
+
+### LLM Selection — OpenRouter Free Tier
+
+The application uses OpenRouter's free-tier API with the `liquid/lfm-2.5-1.2b-thinking:free` model.
+
+My primary objective was to build the entire solution using free or low-cost technologies. OpenRouter provided access to a capable language model without requiring paid API usage.
+
+The tradeoff is performance. While answer quality was generally acceptable, latency was significantly higher than what would be expected from a paid model hosted on dedicated infrastructure.
 
 ### Prompt Design
 
-The prompt uses a two-part structure: a system prompt that sets the assistant role and rules, and a user prompt that injects the numbered context chunks alongside the question. Chunks are prefixed with reference numbers ([1], [2], etc.) so the LLM can produce inline citations that trace directly back to source documents and pages. The system prompt enforces three guardrails: refusing to answer outside the corpus, limiting answer length (target under 200 words for simple questions, up to 400 for multi-step procedures), and always citing sources. This keeps answers grounded and auditable.
+The prompt structure consists of:
 
-### Web Framework — Flask (no LangChain)
+* A system prompt that establishes behavior and response rules
+* A user prompt that contains the question and retrieved context
 
-Flask was chosen for its simplicity — it requires minimal boilerplate for a single-endpoint JSON API backed by a Python function. The RAG pipeline was implemented manually rather than via LangChain, which gave full visibility into the retrieval and prompt-construction logic and avoided pulling in a large dependency for what amounts to a fetch call and string formatting.
+Retrieved chunks are numbered so the model can generate citations that map back to the supporting source material.
+
+The prompt also includes several guardrails:
+
+* Answer only using retrieved content
+* Avoid answering questions outside the document corpus
+* Include citations in responses
+* Keep answers concise and focused
+
+These controls helped improve groundedness and reduce hallucinations.
+
+### Application Framework — Flask
+
+I chose Flask because it is lightweight, easy to understand, and well suited for a project of this scope.
+
+Rather than introducing additional frameworks such as LangChain, I implemented the retrieval and prompt construction logic directly. This approach reduced dependencies and made it easier to understand exactly how data moved through the system.
 
 ## Evaluation Approach
 
-I evaluated my RAG application using 18 test questions across PTO, travel, expenses, remote work, and security topics, including out-of-scope topics.
+To evaluate system performance, I created a set of 18 test questions covering:
 
-The evaluation measured:
+* Paid Time Off (PTO)
+* Travel policies
+* Expense reimbursement
+* Remote work
+* Information security
+* Out-of-scope topics
 
-- Groundedness: whether the answer was fully supported by retrieved policy evidence
-- Citation Accuracy: whether the cited source matched the answer
-- Latency: request-to-answer time in seconds (s)
+The evaluation focused on three key areas:
+
+* Groundedness
+* Citation Accuracy
+* Latency
+
+Groundedness measures whether answers are supported by retrieved evidence. Citation accuracy measures whether the cited source actually supports the answer provided. Latency measures total response time from request to answer.
 
 ## Evaluation Results
 
@@ -54,36 +93,45 @@ The evaluation measured:
 | Latency p50 | 25.97 s |
 | Latency p95 | 33.19 s |
 
-## Scoring Method
+## Scoring Methodology
 
-Groundedness and citation accuracy were manually scored using:
+Groundedness and citation accuracy were manually scored using the following scoring scale:
 
-- 1.0 = correct
-- 0.5 = partially correct
-- 0.0 = incorrect
+* 1.0 = correct
+* 0.5 = partially correct
+* 0.0 = incorrect
 
-Latency was measured automatically using Python's `time.perf_counter()` around each call to the RAG pipeline.
+Latency was measured automatically using Python's `time.perf_counter()`.
 
-## Observations
+## Key Findings 
 
-The system performed best on direct policy questions where the answer was explicitly stated in a single source document. Groundedness was strong (86.1%) because the system prompt strictly instructs the model to answer only from the provided context.
+Overall, the application performed well on straightforward policy questions where the answer existed clearly within a single document.
 
-Citation accuracy (61.1%) was weaker. The LLM produces inline citations by number (e.g. [1], [2]) referring to the numbered context blocks injected in the prompt. In cases where the model cited a number that did not correspond to the specific passage supporting its answer — or omitted a citation entirely — the response was scored as partially or fully incorrect on this metric. This is a known limitation of inline-citation prompting with small free-tier models.
+Groundedness was the strongest area of performance. The retrieval process generally returned relevant content, and the prompt instructions helped keep the model focused on the provided evidence.
 
-Latency (p50 = 25.97s, p95 = 33.19s) is high. This is entirely attributable to the free-tier LLM on OpenRouter, which queues requests on shared infrastructure. Embedding and ChromaDB retrieval are fast (typically under 1s combined). A paid model API would reduce end-to-end latency significantly.
+Citation accuracy was noticeably weaker. While the model frequently included citations, those citations did not always correspond to the exact source supporting the answer. This appears to be a limitation of the smaller free-tier model rather than the retrieval system itself.
+
+Latency was the most significant weakness. Retrieval and embedding operations were typically completed in under one second. Most of the response time was spent waiting for the language model. Because the application relies on a free-tier API, requests are subject to shared infrastructure and queue delays.
 
 ## Known Limitations
 
-- Evaluation set is small (18 questions)
-- Groundedness and citation accuracy were manually scored, introducing subjectivity
-- Citation accuracy is constrained by the free-tier model's reliability at inline citation
-- High latency is a free-tier LLM constraint, not an application architecture issue
-- System depends on retrieval quality from the ChromaDB vector store
+Several limitations should be considered when interpreting the results:
+
+* The evaluation set included only 18 questions.
+* Groundedness and citation accuracy were scored manually, which introduces some subjectivity.
+* Citation reliability is limited by the capabilities of the selected free-tier model.
+* Response latency is heavily influenced by OpenRouter's free-tier infrastructure.
+* Overall answer quality remains dependent on retrieval quality from the vector database.
 
 ## Future Improvements
 
-- Add more evaluation questions
-- Test different chunk sizes
-- Compare top-k retrieval settings
-- Add automated citation checking
-- Add reranking for better retrieval precision
+If I continue developing this project, I would focus on the following enhancements:
+
+* Expand the evaluation dataset.
+* Experiment with different chunk sizes and overlap settings.
+* Compare alternative top-k retrieval configurations.
+* Implement automated citation validation.
+* Add reranking to improve retrieval precision.
+* Evaluate higher-performing language models to improve citation quality and reduce latency.
+
+While there are opportunities for improvement, the project successfully demonstrates a complete end-to-end RAG architecture using entirely free-tier technologies and provides a strong foundation for future enhancements.
