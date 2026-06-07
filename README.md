@@ -36,7 +36,7 @@ Copy `.env.example` to `.env` and fill in:
 
 ```
 OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=liquid/lfm-2.5-1.2b-thinking:free
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
 ```
 
 `OPENROUTER_API_KEY` is required. Get one at [openrouter.ai](https://openrouter.ai).  
