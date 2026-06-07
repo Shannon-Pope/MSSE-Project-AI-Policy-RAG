@@ -19,7 +19,7 @@ User question:
 Policy context:
 {context}
 
-Answer with inline citations (e.g. [1], [2]):
+Answer with inline citations. Only use citation numbers [1] through [{n_citations}] — these are the only sources available. Do not cite any number outside this range.
 """
 
 

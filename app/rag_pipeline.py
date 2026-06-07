@@ -101,12 +101,12 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
     return chunks
 
 
-def call_openrouter(question: str, context: str) -> str:
+def call_openrouter(question: str, context: str, n_citations: int) -> str:
     import time as _t
     if not OPENROUTER_API_KEY:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
-    prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context)
+    prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context, n_citations=n_citations)
 
     print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
     _t1 = _t.time()
@@ -165,7 +165,7 @@ def answer_question(question: str, top_k: int = 4) -> RAGResult:
     documents = [c["text"] for c in chunks]
     metadatas = [{"document_title": c["document_title"], "page": c["page"]} for c in chunks]
     context = format_context(documents, metadatas)  # type: ignore[arg-type]
-    answer = call_openrouter(question, context)
+    answer = call_openrouter(question, context, n_citations=len(chunks))
 
     return {
         "answer": answer,

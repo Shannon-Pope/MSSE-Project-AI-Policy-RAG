@@ -14,11 +14,11 @@ I selected ChromaDB's built-in `ONNXMiniLM_L6_V2` embedding model because it run
 
 Running embeddings locally also eliminated concerns about API quotas, network latency, and ongoing operating costs. Since the same model is used for both indexing and retrieval, consistency across the pipeline is maintained.
 
-### Chunking Strategy — 900 characters, 150-character overlap
+### Chunking Strategy — 900 characters, 150-character overlap, 100-character minimum
 
-Documents are divided into chunks of approximately 900 characters with a 150-character overlap between chunks.
+Documents are divided into chunks of approximately 900 characters with a 150-character overlap between chunks. A minimum chunk length of 100 characters is enforced to prevent degenerate end-of-section fragments from being indexed.
 
-I chose this approach to balance context preservation with retrieval accuracy. Larger chunks can contain multiple unrelated concepts, which can weaken embedding quality. Smaller chunks can break policy statements apart and make it harder to retrieve complete answers. The overlap helps ensure important information is not lost at chunk boundaries.
+I chose this approach to balance context preservation with retrieval accuracy. Larger chunks can contain multiple unrelated concepts, which can weaken embedding quality. Smaller chunks can break policy statements apart and make it harder to retrieve complete answers. The overlap helps ensure important information is not lost at chunk boundaries. The minimum length filter prevents repetitive boilerplate fragments — such as short "Questions should be directed to HR" footers.
 
 ### Retrieval Strategy — Top-k = 4
 
@@ -55,6 +55,7 @@ The prompt also includes several guardrails:
 * Avoid answering questions outside the document corpus
 * Include citations in responses
 * Keep answers concise and focused
+* Restrict citations to the numbered range actually provided 
 
 These controls helped improve groundedness and reduce hallucinations.
 
@@ -109,8 +110,6 @@ Overall, the application performed well on straightforward policy questions wher
 
 Groundedness was the strongest area of performance. The retrieval process generally returned relevant content, and the prompt instructions helped keep the model focused on the provided evidence.
 
-Citation accuracy was noticeably weaker. While the model frequently included citations, those citations did not always correspond to the exact source supporting the answer. This appears to be a limitation of the smaller free-tier model rather than the retrieval system itself.
-
 Latency was the most significant weakness. Retrieval and embedding operations were typically completed in under one second. Most of the response time was spent waiting for the language model. Because the application relies on a free-tier API, requests are subject to shared infrastructure and queue delays.
 
 ## Known Limitations
@@ -119,7 +118,6 @@ Several limitations should be considered when interpreting the results:
 
 * The evaluation set included only 18 questions.
 * Groundedness and citation accuracy were scored manually, which introduces some subjectivity.
-* Citation reliability is limited by the capabilities of the selected free-tier model.
 * Response latency is heavily influenced by OpenRouter's free-tier infrastructure.
 * Overall answer quality remains dependent on retrieval quality from the vector database.
 

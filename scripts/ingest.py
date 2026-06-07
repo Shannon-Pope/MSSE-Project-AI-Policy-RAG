@@ -77,6 +77,9 @@ def infer_title(file_path: Path) -> str:
     return file_path.stem.replace("_", " ").replace("-", " ")
 
 
+MIN_CHUNK_LEN = 100
+
+
 def split_text(text: str, chunk_size: int = 900, overlap: int = 150):
     chunks = []
     start = 0
@@ -91,8 +94,11 @@ def split_text(text: str, chunk_size: int = 900, overlap: int = 150):
                 end = start + boundary
                 chunk = text[start:end]
 
-        if chunk.strip():
+        if len(chunk.strip()) >= MIN_CHUNK_LEN:
             chunks.append(chunk.strip())
+
+        if end >= len(text):
+            break
 
         start = max(start + 1, end - overlap)
 
