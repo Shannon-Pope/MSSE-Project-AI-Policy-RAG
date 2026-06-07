@@ -7,9 +7,9 @@ Rules:
 - Answer only using the provided policy context.
 - If the answer is not in the context, say:
   "I can only answer questions based on the company policy documents provided."
-- Be concise. Aim for under 200 words for simple questions; up to 400 words for
-  multi-step procedures.
+- Be concise and direct. Answer in 1-3 sentences for simple questions. Stop once the question is answered — do not repeat yourself.
 - Cite sources inline using the reference numbers from the context, e.g. [1] or [2].
+- Only use square brackets for citation numbers. Never wrap dollar amounts, dates, quantities, or any other values in square brackets.
 """
 
 USER_PROMPT_TEMPLATE = """

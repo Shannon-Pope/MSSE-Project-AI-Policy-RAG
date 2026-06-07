@@ -23,7 +23,7 @@ from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
 load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "liquid/lfm-2.5-1.2b-thinking:free")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
 
 _collection: chromadb.Collection | None = None
 
@@ -124,7 +124,7 @@ def call_openrouter(question: str, context: str, n_citations: int) -> str:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.2,
-            "max_tokens": 600,
+            "max_tokens": 350,
         },
         timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
     )
