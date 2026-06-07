@@ -114,32 +114,39 @@ def call_openrouter(question: str, context: str, n_citations: int) -> str:
         raise ValueError("OPENROUTER_API_KEY is missing. Add it to your .env file.")
 
     prompt = USER_PROMPT_TEMPLATE.format(question=question, context=context, n_citations=n_citations)
-
     print(f"[rag] calling OpenRouter model={OPENROUTER_MODEL}", flush=True)
-    _t1 = _t.time()
 
-    response = httpx.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": OPENROUTER_MODEL,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 350,
-        },
-        timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
-    )
+    for attempt in range(3):
+        _t1 = _t.time()
+        response = httpx.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": OPENROUTER_MODEL,
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.2,
+                "max_tokens": 350,
+            },
+            timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
+        )
+        print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
 
-    print(f"[rag] OpenRouter response: {response.status_code} in {_t.time()-_t1:.2f}s", flush=True)
+        if response.status_code == 429 and attempt < 2:
+            wait = int(response.headers.get("Retry-After", 2 ** (attempt + 1)))
+            print(f"[rag] rate limited, retrying in {wait}s (attempt {attempt + 1}/3)", flush=True)
+            _t.sleep(wait)
+            continue
 
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+    raise RuntimeError("Exhausted retries")
 
 
 def format_citations(chunks: list[Chunk]) -> list[Citation]:
