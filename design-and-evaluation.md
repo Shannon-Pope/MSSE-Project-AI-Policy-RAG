@@ -34,11 +34,11 @@ For a project of this size, ChromaDB provides all the functionality needed witho
 
 ### LLM Selection — OpenRouter Free Tier
 
-The application uses OpenRouter's free-tier API with the `liquid/lfm-2.5-1.2b-thinking:free` model.
+The application uses OpenRouter's free-tier API with the `meta-llama/llama-3.3-70b-instruct:free` model.
 
-My primary objective was to build the entire solution using free or low-cost technologies. OpenRouter provided access to a capable language model without requiring paid API usage.
+OpenRouter provided access to a capable language model without requiring paid API usage.
 
-The tradeoff is performance. While answer quality was generally acceptable, latency was significantly higher than what would be expected from a paid model hosted on dedicated infrastructure.
+The tradeoff of a free model is performance. While answer quality was generally acceptable, latency was significantly higher than what would be expected from a paid model hosted on dedicated infrastructure.
 
 ### Prompt Design
 
