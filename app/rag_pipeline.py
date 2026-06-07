@@ -25,6 +25,8 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
 
+RELEVANCE_THRESHOLD = 1.3
+
 _collection: chromadb.Collection | None = None
 
 
@@ -87,6 +89,11 @@ def retrieve_chunks(question: str, top_k: int = 4) -> list[Chunk]:
 
     documents = (results["documents"] or [[]])[0]
     metadatas = (results["metadatas"] or [[]])[0]
+    distances = (results["distances"] or [[]])[0]
+
+    if distances and min(distances) > RELEVANCE_THRESHOLD:
+        print(f"[rag] off-topic: min_distance={min(distances):.3f}", flush=True)
+        return []
 
     chunks: list[Chunk] = []
     for doc, meta in zip(documents, metadatas):
