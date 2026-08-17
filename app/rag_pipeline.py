@@ -132,6 +132,7 @@ def call_openrouter(question: str, context: str, n_citations: int) -> str:
                 ],
                 "temperature": 0.2,
                 "max_tokens": 350,
+                "reasoning": {"exclude": True},
             },
             timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
         )
