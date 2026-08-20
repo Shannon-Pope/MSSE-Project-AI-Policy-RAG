@@ -23,7 +23,7 @@ from app.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, format_context
 load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3.5-lightning:free")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
 
 RELEVANCE_THRESHOLD = 1.3
 
@@ -132,7 +132,7 @@ def call_openrouter(question: str, context: str, n_citations: int) -> str:
                 ],
                 "temperature": 0.2,
                 "max_tokens": 350,
-                "reasoning": {"exclude": True},
+                "reasoning": {"effort": "low", "exclude": True},
             },
             timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0),
         )
